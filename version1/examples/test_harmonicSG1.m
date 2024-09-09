@@ -18,8 +18,10 @@ fi0 = pi^(-1/4)*exp(-x.^2/2)*sqrt(dx);
 % The output time-grid:
 dt = 0.1;
 t=0:dt:T;
+options = SGdefault_op;
+data = SGdata(options);
 tic
-[U, mniter, matvecs] = SemiGlobal(@(u, t, v) -1i*Hpsi(K, V + x*cos(t), v), @(u1, t1, u2, t2) -1i*x*(cos(t1) - cos(t2)).*u1, 0, [], [-195*1i, 0], fi0, t, Nts, Nt_ts, Ncheb, tol);
+[U, mniter, matvecs, est_errors, history] = SemiGlobal1(@(u, t, v) -1i*Hpsi(K, V + x*cos(t), v), @(u1, t1, u2, t2) -1i*x*(cos(t1) - cos(t2)).*u1, 0, [], [-195*1i, 0], fi0, t, Nts, Nt_ts, Ncheb, tol, options, data);
 toc
 % The mean number of iterations, for a time step (should be close to 1, for ideal
 % efficiency):
@@ -27,9 +29,17 @@ mniter
 % The number of matrix-vector multiplications, which constitutes the most of the
 % numerical effort:
 matvecs
+% Estimated errors:
+est_errors
 % Computation of the maximal error - the deviation from the analytical
 % result of the expectation value.
 % Computing the expectation value of x in all the time points:
-mx = evmiu(U, x);
-error = mx - (-0.5*sin(t).*t);
-maxer = max(abs(error))
+mx_ex = (-0.5*sin(t).*t);
+% Computing the expectation value of p in all the time points:
+mp_ex = -0.5*(sin(t) + t.*cos(t));
+angle_analytic = (t/2 - (sin(2*t)/4 - t.*cos(2*t)/2)/8);
+Uex_phase = pi^(-1/4)*exp(-1i*angle_analytic).*exp(1i*(mp_ex.*(x - mx_ex/2)) - (x - mx_ex).^2/2)*sqrt(dx);
+Uex_fHO = Uex_phase(:, end);
+error_anal = norm(U(:, end) - Uex_fHO)/norm(Uex_fHO)
+fprintf('\nRelative difference of the estimated error and the exact error:\n')
+(est_errors.total - error_anal)/error_anal

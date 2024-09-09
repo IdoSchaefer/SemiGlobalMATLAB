@@ -21,9 +21,14 @@ ihfun = @(t) exp(-x.^2/2)*cos(t);
 % The output time-grid:
 dt = 0.1;
 t=0:dt:T;
+options = SGdefault_op;
+data = SGdata(options);
+% tic
+% [U, mniter, matvecs, est_errors, history] = SemiGlobal1(@(u, t, v) -1i*Hpsi(K, V + x*cos(t), v), @(u1, t1, u2, t2) -1i*x*(cos(t1) - cos(t2)).*u1, 0, [], [-195*1i, 0], fi0, t, Nts, Nt_ts, Ncheb, tol, options, data);
+% toc
 display('Semi-global algorithm computation:')
 tic
-[U, mniter, matvecs] = SemiGlobal(@(u, t, v) -1i*Hpsi(K, V + x*cos(t), v), @(u1, t1, u2, t2) -1i*x*(cos(t1) - ones(1, Nt_ts)*cos(t2)).*u1, 0, ihfun, [-195*1i, 0], fi0, t, Nts, Nt_ts, Ncheb, tol);
+[U, mniter, matvecs, est_errors, history] = SemiGlobal1(@(u, t, v) -1i*Hpsi(K, V + x*cos(t), v), @(u1, t1, u2, t2) -1i*x*(cos(t1) - cos(t2)).*u1, 0, ihfun, [-195*1i, 0], fi0, t, Nts, Nt_ts, Ncheb, tol, options, data);
 toc
 % The mean number of iterations, for a time step (should be close to 1, for ideal
 % efficiency):

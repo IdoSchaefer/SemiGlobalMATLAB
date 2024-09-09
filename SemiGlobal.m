@@ -450,9 +450,17 @@ function [U, mniter, matvecs, max_errors, history] = SemiGlobal(Gop, Gdiff_op, G
     end
     
     function [U, f_error, fUerror] = Ufrom_vArnoldi(v_vecs, timeM, Upsilon, RvKr, samplingp, capacity)
-        % The function computes the solution from the v vectors.
+        % The function computes the solution from the v vectors for the
+        % Arnoldi algorithm at all time points specified by the transpose
+        % Vandermonde matrix timeM.
         % Input:
+        % v_vecs: The v vectors
         % timeM: The matrix of the t powers for the required time-points
+        % Upsilon: The Krylov space orthonormalized vectors
+        % RvKr: The vectors computed by the function getRv
+        % samplingp: The sampling points for the Newton expansion in the
+        % Krylov space
+        % capacity: The capacity of the approximation domain.
         % Output:
         % U: The solution in the required time points
         % f_error: The estimated relative error of the computation of f_fun(G,t(Nt_ts))v_vecs(:, Nkr + 1)
@@ -480,6 +488,7 @@ function [U, mniter, matvecs, max_errors, history] = SemiGlobal(Gop, Gdiff_op, G
     end
 
     function [U, fUerror] = Ufrom_vCheb(v_vecs, timeM, Vcheb, Ccheb_f)
+        
         fGv = Vcheb*Ccheb_f;
         U = v_vecs(:, 1:(end-1))*timeM + fGv;
         if nargout>1

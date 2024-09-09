@@ -26,18 +26,15 @@ gs = gsNLHdiag(H, @(u,x,t) conj(u).*u, x, 2e-12);
 % The output time-grid:
 dt = 0.1;
 t=0:dt:T;
+options = SGdefault_op;
+data = SGdata(options);
 tic
-[U, mniter, matvecs] = SemiGlobal(@(u, t, v) -1i*Hpsi(K, V + x*cos(t) + conj(u).*u, v), @(u1, t1, u2, t2) -1i*(x*(cos(t1) - ones(1, Nt_ts)*cos(t2)) + conj(u1).*u1 - (conj(u2).*u2)*ones(1, Nt_ts)).*u1, 0, [], [-195*1i, 0], gs, t, Nts, Nt_ts, Ncheb, tol);
+[U, mniter, matvecs, est_errors, history] = SemiGlobal1(@(u, t, v) -1i*Hpsi(K, V + conj(u).*u, v), @(u1, t1, u2, t2) -1i*(conj(u1).*u1 - (conj(u2).*u2)).*u1, 0, [], [-195*1i, 0], exp(1i*8*x).*gs, t, Nts, Nt_ts, Ncheb, tol, options, data);
 toc
-% The mean number of iterations, for a time step (should be close to 1, for ideal
-% efficiency):
-mniter
-% The number of matrix-vector multiplications, which constitutes the most of the
-% numerical effort:
-matvecs
-% Computation of the maximal error - the deviation from the
-% result of the expectation value.
-% Computing the expectation value of x in all the time points:
-mx = evmiu(U, x);
-error = mx - (-0.5*sin(t).*t);
-maxer = max(abs(error))
+optionsRK = odeset('RelTol', 1e-13, 'absTol', 1e-13);
+fprintf('\nSmall tolerance Runge-Kutta computation:\n')
+tic
+[time, URK] = ode45(@(t, u) -1i*Hpsi(K, V + conj(u).*u, u), [0 T/2 T], exp(1i*8*x).*gs, optionsRK);
+toc
+URK = URK(end,:).';
+error = norm(U(:, end) - URK(:, end))/norm(URK(:, end))
