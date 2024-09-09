@@ -63,3 +63,16 @@ for obtaining the error decay curves presented in the paper. The main
 program of the computation of the error decay curves is getSGdataSGcode.m .
 The subfolder article_source_files has to be added to the MATLAB path in
 order that the required data files will be recognized.
+
+Update (9.9.2024): Version 1
+-----------------------------
+A new version of the algorithm was added. The main function is SemiGlobal1.m.
+The main new features of the new code are the following:
+1. Accurate error estimations are available, replacing the old ones, most of which
+typically greatly overestimate the error.
+2. A new, reliable criterion for stability is used for the instability warnings, based on analysis.
+3. The criterion for convergence of the iterative process was replaced, based on the accurate
+error estimations of the convergence error.
+4. There is a better control of the algorithm options by the user.
+
+Examples for the application of the new version are available in the folder version1/examples.
