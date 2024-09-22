@@ -74,6 +74,10 @@ function [U, mniter, matvecs, est_errors, history] = SemiGlobal1(Gop, Gdiff_op, 
 %   texp_cheap. However, in the case of odd Nt_ts the estimation is more
 %   expansive numerically. Not computed for odd Nt_ts if options.texp_er_odd = false
 %   (the default is options.texp_er_odd = true).
+%   texp_cheap_odd (for odd Nt_ts only): The estimated relative error 
+%   resulting from the time-expansions in each time-step; more precise than
+%   texp_cheap, but less safe - it might underestimate the error. Less
+%   precise than texp_exact.
 %   fm: The estimated relative error resulting from the
 %   computation of the function of matrix.
 %   conv: The total estimated relative convergence error. It is computed
@@ -99,8 +103,9 @@ function [U, mniter, matvecs, est_errors, history] = SemiGlobal1(Gop, Gdiff_op, 
 % following fields:
 %   t: The time grid of propagation
 %   U: The solution at history.t
-%   texp_error_cheap: The cheap time-expansion error estimation for all time-steps
-%   texp_error_exact: The exact time-expansion error estimation for all time-steps
+%   texp_error_cheap, texp_error_exact, texp_error_cheap_odd (for odd Nt_ts only):
+%   The cheap time-expansion error estimations for all time-steps (see the
+%   description for the fields of the output structure est_errors).
 %   fm_error: The function of matrix error estimation for all time-steps
 %   conv_error, conv_error_cheb, conv_error_texp, conv_error_fm: The convergence error
 %   estimations for all time-steps (see the description for the fields of
@@ -115,7 +120,7 @@ function [U, mniter, matvecs, est_errors, history] = SemiGlobal1(Gop, Gdiff_op, 
 %   algorithm. For the Arnoldi algorithm it is computed for each time-step.
 %   Problematic values are in the order of ~0.1-1 or higher.
 % Called functions: SGdefault_op, SGdata, chebcM, chebc2result, vchebMop,
-% chebweights, createKrop, getRvKr, divdif, new_divdif
+% chebweights, createKrop, divdif, new_divdif
 
 % Author: Ido Schaefer
 % ido.schaefer@gmail.com
@@ -211,10 +216,11 @@ function [U, mniter, matvecs, est_errors, history] = SemiGlobal1(Gop, Gdiff_op, 
         % For odd Nt_ts, the middle time-point is also in the middle of the
         % time-step:
         tmidi = ceil(Nt_ts/2);
+        % For the exact time-expansion error computation; used also in a variant of
+        % the cheap estimation:
+        Etexp_factor_odd = 4*abs(Tts*(Nt_ts - 1)/(Nt_ts*(Nt_ts^2 - 4)*(Nt_ts - 4)));
         if options.texp_er_odd
-            % For the exact time-expansion error computation; performed
-            % only if specified by the field texp_er_odd in options:
-            Etexp_factor_odd = 4*abs(Tts*(Nt_ts - 1)/(Nt_ts*(Nt_ts^2 - 4)*(Nt_ts - 4)));
+            % If the exact time-expansion error computation is performed:
             % The error estimaiton for odd Nt_ts requires two test points:
             texp_er_tpoints = [(t_ts(tmidi) + t_ts(tmidi + 1))/2, (t_ts(tmidi) + t_ts(tmidi - 1))/2];
             % The indices of the test-points:
@@ -694,10 +700,18 @@ function [U, mniter, matvecs, est_errors, history] = SemiGlobal1(Gop, Gdiff_op, 
             s(:, 1) = s(:, Nt_ts);
         end
     end
+    if ~Nt_ts_is_even
+        % A variant of the cheap estimation for odd Nt_ts only; in general
+        % more accurate than est_errors.texp_cheap but less safe:
+        est_errors.texp_cheap_odd = est_errors.texp_cheap*Etexp_factor_odd/Etexp_factor_cheap;
+        if nargout>4
+            history.texp_error_cheap_odd = history.texp_error_cheap*Etexp_factor_odd/Etexp_factor_cheap;
+        end
+    end
     if Nt_ts_is_even || options.texp_er_odd
         est_errors.total = est_errors.texp_exact + est_errors.fm + est_errors.conv;
     else
-        est_errors.total = est_errors.texp_cheap + est_errors.fm + est_errors.conv;
+        est_errors.total = est_errors.texp_cheap_odd + est_errors.fm + est_errors.conv;
     end
     if tol_mode
         if Nt_ts_is_even || options.texp_er_odd
