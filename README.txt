@@ -76,3 +76,6 @@ error estimations of the convergence error.
 4. There is a better control of the algorithm options by the user.
 
 Examples for the application of the new version are available in the folder version1/examples.
+
+A short guide for the parameter choice (SGparameter_choice.pdf) has been added to the folder
+version1.

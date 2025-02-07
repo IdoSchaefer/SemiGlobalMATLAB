@@ -116,7 +116,7 @@ function [U, mniter, matvecs, est_errors, history] = SemiGlobal1(Gop, Gdiff_op, 
 %   iterated solution for all time-steps. Provides an estimation of the
 %   error of the previous iterated solution.
 %   niter: The number of iterations for each time-step
-%   stab_factor: The stability factor; it is a scalar for the Chebyshev
+%   instab_factor: The instability factor; it is a scalar for the Chebyshev
 %   algorithm. For the Arnoldi algorithm it is computed for each time-step.
 %   Problematic values are in the order of ~0.1-1 or higher.
 % Called functions: SGdefault_op, SGdata, chebcM, chebc2result, vchebMop,
@@ -292,21 +292,21 @@ function [U, mniter, matvecs, est_errors, history] = SemiGlobal1(Gop, Gdiff_op, 
         fztest = f_fun(ztest, Tts);
         f_scalar_error = max(abs(chebc2result(Ccheb_f_ts(:, Nt_ts - 1), ev_domain, ztest) - fztest));
         % Stability factor:
-        stability_factor = f_scalar_error*max(abs(ev_domain))^Nt_ts/factorialNt_ts;
+        instability_factor = f_scalar_error*max(abs(ev_domain))^Nt_ts/factorialNt_ts;
         % Estimated stability criterion (a boolean variable):
-        instability = stability_factor>0.1;
+        instability = instability_factor>0.1;
         if instability
             fprintf('Warning: Instability in the propagation process may occur.\n')
         end
         if nargout>4
-            history.stab_factor = stability_factor;
+            history.instab_factor = instability_factor;
         end
     else
         % For the Arnoldi algorithm, the stability test is performed in
         % each time step.
         instability = false;
         if nargout>4
-            history.stab_factor = zeros(1, Nts);
+            history.instab_factor = zeros(1, Nts);
         end
     end
     % A boolean that indicates if the convergence has failed in at least one
@@ -558,18 +558,18 @@ function [U, mniter, matvecs, est_errors, history] = SemiGlobal1(Gop, Gdiff_op, 
         %fprintf('%d\n', norm(v_vecs(:, Nt_ts + 1)))
         if Arnoldi && (~instability || nargout>4)
             f_scalar_error = f_abs_error/norm(v_vecs(:, Nt_ts + 1));
-            stability_factor = f_scalar_error*max(abs(eigval))^Nt_ts/factorialNt_ts;
+            instability_factor = f_scalar_error*max(abs(eigval))^Nt_ts/factorialNt_ts;
             % If a possibility of instability hasn't been detected yet, the
             % stability criterion is checked:
             if ~instability
                 % Estimated stability criterion (a boolean variable):
-                instability = stability_factor>0.1;
+                instability = instability_factor>0.1;
                 if instability
                     fprintf('Warning: Instability in the propagation process may occur (detected in time step No. %d).\n', tsi)
                 end
             end
             if nargout>4
-                history.stab_factor(tsi) = stability_factor;
+                history.instab_factor(tsi) = instability_factor;
             end
         end
         % Detection of the first appearance of convergence failure:
